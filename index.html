@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>소리내어 읽기</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+  :root {
+    --bg: #0e0e10;
+    --surface: #1a1a1e;
+    --surface2: #242428;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0f0f0;
+    --muted: #888;
+    --faint: #444;
+    --accent: #e8c97a;
+    --accent-dim: rgba(232,201,122,0.12);
+    --danger: #e07070;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    padding: env(safe-area-inset-top, 16px) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+  }
+
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 16px 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  header {
+    padding: 12px 0 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+  header span { font-size: 12px; color: var(--muted); }
+
+  .card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  /* Upload */
+  #upload-section { display: block; }
+  #reader-section { display: none; }
+
+  .drop-zone {
+    padding: 40px 24px;
+    text-align: center;
+    cursor: pointer;
+    border: 1.5px dashed var(--faint);
+    border-radius: var(--radius);
+    transition: border-color 0.2s, background 0.2s;
+    background: transparent;
+  }
+  .drop-zone.hover { border-color: var(--accent); background: var(--accent-dim); }
+  .drop-icon { font-size: 40px; margin-bottom: 12px; display: block; }
+  .drop-title { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+  .drop-sub { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  #file-input { display: none; }
+
+  /* File info bar */
+  .file-bar {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .file-info { min-width: 0; }
+  .file-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+  .file-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .lang-select {
+    font-size: 13px;
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--surface2);
+    color: var(--text);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    cursor: pointer;
+    outline: none;
+    -webkit-appearance: none;
+  }
+
+  /* Text display */
+  #text-display {
+    padding: 16px;
+    height: 280px;
+    overflow-y: auto;
+    font-size: 15px;
+    line-height: 1.9;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  #text-display::-webkit-scrollbar { width: 3px; }
+  #text-display::-webkit-scrollbar-track { background: transparent; }
+  #text-display::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 4px; }
+
+  .sentence { cursor: pointer; border-radius: 4px; padding: 2px 3px; transition: background 0.15s; }
+  .sentence.done { color: var(--faint); }
+  .sentence.current { background: var(--accent-dim); color: var(--accent); font-weight: 500; }
+  .sentence:active { opacity: 0.7; }
+
+  /* Progress */
+  .progress-wrap { padding: 0 16px 10px; }
+  .progress-track { height: 3px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 4px; width: 0%; transition: width 0.4s ease; }
+  .progress-info { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 7px; }
+
+  /* Controls */
+  .controls-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .btn-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .btn {
+    border: 0.5px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s, background 0.15s;
+    font-size: 13px;
+    padding: 8px 14px;
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(0.95); opacity: 0.8; }
+
+  .btn-play {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    font-size: 22px;
+    background: var(--accent);
+    color: #0e0e10;
+    border: none;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .btn-play:active { transform: scale(0.93); }
+
+  .sliders { display: flex; flex-direction: column; gap: 10px; }
+  .slider-row { display: flex; align-items: center; gap: 10px; }
+  .slider-label { font-size: 12px; color: var(--muted); width: 32px; flex-shrink: 0; }
+  .slider-val { font-size: 12px; color: var(--muted); width: 38px; text-align: right; flex-shrink: 0; }
+
+  input[type=range] {
+    flex: 1;
+    height: 3px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--surface2);
+    border-radius: 4px;
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  .btn-change {
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px;
+    text-align: center;
+    color: var(--muted);
+    border-color: var(--border);
+    font-size: 13px;
+    background: transparent;
+    border-radius: var(--radius-sm);
+  }
+
+  .no-support {
+    padding: 40px 24px;
+    text-align: center;
+    color: var(--danger);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* Search */
+  .search-bar { padding: 8px 12px; border-bottom: 0.5px solid var(--border); background: var(--surface); }
+  .search-inner { display: flex; align-items: center; gap: 6px; }
+  .search-inner input {
+    flex: 1; background: var(--surface2); border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 7px 12px; font-size: 14px;
+    color: var(--text); font-family: 'Noto Sans KR', sans-serif; outline: none;
+  }
+  .search-inner input:focus { border-color: var(--accent); }
+  .search-count { font-size: 11px; color: var(--muted); white-space: nowrap; min-width: 40px; text-align: center; }
+  .search-nav {
+    width: 30px; height: 30px; background: var(--surface2); border: 0.5px solid var(--border);
+    border-radius: 8px; color: var(--text); cursor: pointer; font-size: 13px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .search-nav:active { transform: scale(0.93); }
+  .search-close { background: transparent; border: none; color: var(--muted); font-size: 16px; cursor: pointer; padding: 4px; flex-shrink: 0; }
+  .sentence.highlight { background: rgba(232,201,122,0.25); border-radius: 4px; }
+  .sentence.highlight-active { background: var(--accent); color: #0e0e10; font-weight: 500; border-radius: 4px; }
+
+  /* Resume banner */
+  .resume-banner {
+    display: none;
+    background: var(--accent-dim);
+    border: 0.5px solid rgba(232,201,122,0.3);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .resume-banner.show { display: flex; }
+  .resume-info { font-size: 13px; line-height: 1.5; }
+  .resume-title { font-weight: 500; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+  .resume-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .resume-btns { display: flex; gap: 6px; flex-shrink: 0; }
+  .btn-resume { background: var(--accent); color: #0e0e10; border: none; border-radius: var(--radius-sm); padding: 7px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; }
+  .btn-resume-dismiss { background: transparent; border: 0.5px solid var(--border); color: var(--muted); border-radius: var(--radius-sm); padding: 7px 10px; font-size: 12px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeIn 0.25s ease forwards; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>소리내어 읽기</h1>
+    <span>Text to Speech</span>
+  </header>
+
+  <div class="resume-banner" id="resume-banner">
+    <div class="resume-info">
+      <div class="resume-title" id="resume-fname">—</div>
+      <div class="resume-sub" id="resume-sub">이어서 듣기</div>
+    </div>
+    <div class="resume-btns">
+      <button class="btn-resume-dismiss" id="btn-resume-dismiss">무시</button>
+      <button class="btn-resume" id="btn-resume">▶ 이어듣기</button>
+    </div>
+  </div>
+
+  <div id="upload-section">
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <span class="drop-icon">📄</span>
+      <div class="drop-title">파일을 선택하세요</div>
+      <div class="drop-sub">.txt 파일을 탭하여 불러오기<br>드래그&드롭도 가능해요</div>
+    </div>
+    <input type="file" id="file-input" accept=".txt,text/plain">
+  </div>
+
+  <div id="reader-section">
+    <div class="card fade-in">
+      <div class="file-bar">
+        <div class="file-info">
+          <div class="file-name" id="file-name">—</div>
+          <div class="file-meta" id="file-meta">0 문장</div>
+        </div>
+        <select class="lang-select" id="lang-select">
+          <option value="ko-KR">🇰🇷 한국어</option>
+          <option value="en-US">🇺🇸 English</option>
+          <option value="ja-JP">🇯🇵 日本語</option>
+          <option value="zh-CN">🇨🇳 中文</option>
+        </select>
+      </div>
+
+      <div class="search-bar" id="search-bar" style="display:none">
+        <div class="search-inner">
+          <input type="text" id="search-input" placeholder="🔍  찾을 내용 입력..." autocomplete="off" autocorrect="off" spellcheck="false">
+          <span class="search-count" id="search-count"></span>
+          <button class="search-nav" id="search-prev">↑</button>
+          <button class="search-nav" id="search-next">↓</button>
+          <button class="search-close" id="search-close">✕</button>
+        </div>
+      </div>
+
+      <div id="text-display"></div>
+
+      <div class="progress-wrap">
+        <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+        <div class="progress-info">
+          <span id="pos-label">0 / 0</span>
+          <span id="time-label">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls-card fade-in">
+      <div class="btn-row">
+        <button class="btn" id="btn-restart">↩ 처음</button>
+        <button class="btn" id="btn-prev">◀ 이전</button>
+        <button class="btn btn-play" id="btn-play">▶</button>
+        <button class="btn" id="btn-next">다음 ▶</button>
+        <button class="btn" id="btn-search">🔍</button>
+      </div>
+
+      <div class="sliders">
+        <div class="slider-row">
+          <span class="slider-label">속도</span>
+          <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1">
+          <span class="slider-val" id="rate-val">1.0x</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">음높이</span>
+          <input type="range" id="pitch" min="0.5" max="2" step="0.1" value="1">
+          <span class="slider-val" id="pitch-val">1.0</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">볼륨</span>
+          <input type="range" id="vol" min="0" max="1" step="0.05" value="1">
+          <span class="slider-val" id="vol-val">100%</span>
+        </div>
+      </div>
+
+      <button class="btn btn-change" id="btn-change">다른 파일 열기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const synth = window.speechSynthesis;
+if (!synth) {
+  document.getElementById('app').innerHTML = '<div class="no-support">이 브라우저는 음성 합성(TTS)을 지원하지 않습니다.<br>Safari 또는 Chrome을 사용해 주세요.</div>';
+} else {
+
+let sentences = [], idx = 0, playing = false;
+let currentFileName = '';
+
+const $ = id => document.getElementById(id);
+const dropZone = $('drop-zone');
+const fileInput = $('file-input');
+
+const STORE_KEY = 'tts_progress';
+
+function saveProgress() {
+  if (!currentFileName || sentences.length === 0) return;
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      fileName: currentFileName,
+      idx: idx,
+      total: sentences.length,
+      lang: $('lang-select').value,
+      rate: $('rate').value,
+      savedAt: Date.now()
+    }));
+  } catch(e) {}
+}
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch(e) { return null; }
+}
+
+function clearProgress() {
+  try { localStorage.removeItem(STORE_KEY); } catch(e) {}
+}
+
+// Show resume banner on load
+const saved = loadProgress();
+if (saved && saved.idx > 0) {
+  $('resume-fname').textContent = saved.fileName;
+  const pct = Math.round((saved.idx / saved.total) * 100);
+  $('resume-sub').textContent = saved.idx + '번째 문장 · ' + pct + '% 진행됨';
+  $('resume-banner').classList.add('show');
+}
+
+$('btn-resume-dismiss').addEventListener('click', () => {
+  $('resume-banner').classList.remove('show');
+  clearProgress();
+});
+
+$('btn-resume').addEventListener('click', () => {
+  $('resume-banner').classList.remove('show');
+  // Need user to re-load the file (browser security - can't re-open files)
+  const saved = loadProgress();
+  pendingResumeIdx = saved ? saved.idx : 0;
+  if (saved && saved.lang) $('lang-select').value = saved.lang;
+  if (saved && saved.rate) { $('rate').value = saved.rate; $('rate-val').textContent = parseFloat(saved.rate).toFixed(1) + 'x'; }
+  alert('같은 파일(' + (saved ? saved.fileName : '') + ')을 선택해주세요. 자동으로 이어서 시작합니다.');
+  fileInput.click();
+});
+
+let pendingResumeIdx = -1;
+
+// Drag & drop
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('hover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('hover'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('hover'); if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
+
+function loadFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    sentences = splitSentences(text);
+    currentFileName = file.name;
+    // Resume from saved position if file name matches
+    if (pendingResumeIdx > 0 && pendingResumeIdx < sentences.length) {
+      idx = pendingResumeIdx;
+    } else {
+      idx = 0;
+    }
+    pendingResumeIdx = -1;
+    $('file-name').textContent = file.name;
+    $('file-meta').textContent = sentences.length + ' 문장 · ' + Math.round(text.length / 1000) + 'KB';
+    renderText();
+    $('upload-section').style.display = 'none';
+    $('reader-section').style.display = 'block';
+    updateStats();
+    saveProgress();
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function splitSentences(text) {
+  const cleaned = text.replace(/\r\n/g, '\n').trim();
+  const parts = cleaned.split(/(?<=[.!?。！？])\s+|\n+/);
+  return parts.map(s => s.trim()).filter(s => s.length > 1);
+}
+
+function renderText() {
+  $('text-display').innerHTML = sentences.map((s, i) =>
+    `<span class="sentence" id="s${i}" data-i="${i}">${escapeHtml(s)}&nbsp;</span>`
+  ).join('');
+  document.querySelectorAll('.sentence').forEach(el => {
+    el.addEventListener('click', () => {
+      const wasPlaying = playing;
+      stopAll();
+      idx = +el.dataset.i;
+      updateStats();
+      if (wasPlaying) playFrom(idx);
+    });
+  });
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function updateStats() {
+  document.querySelectorAll('.sentence').forEach((el, i) => {
+    el.className = 'sentence' + (i < idx ? ' done' : i === idx ? ' current' : '');
+  });
+  const cur = $('s' + idx);
+  if (cur) cur.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  const pct = sentences.length > 1 ? (idx / (sentences.length - 1)) * 100 : 0;
+  $('progress-fill').style.width = Math.round(pct) + '%';
+  $('pos-label').textContent = (idx + 1) + ' / ' + sentences.length + ' 문장';
+  const remaining = sentences.length - idx;
+  const rate = parseFloat($('rate').value);
+  const secs = Math.round((remaining * 12) / (rate * 2.5));
+  const m = Math.floor(secs / 60), s = secs % 60;
+  $('time-label').textContent = '약 ' + (m > 0 ? m + '분 ' : '') + s + '초 남음';
+}
+
+function speak(text, onEnd) {
+  synth.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = $('lang-select').value;
+  utt.rate = parseFloat($('rate').value);
+  utt.pitch = parseFloat($('pitch').value);
+  utt.volume = parseFloat($('vol').value);
+  utt.onend = onEnd;
+  utt.onerror = () => { playing = false; $('btn-play').textContent = '▶'; };
+  synth.speak(utt);
+}
+
+function playFrom(i) {
+  if (i >= sentences.length) { stopAll(); clearProgress(); return; }
+  idx = i;
+  playing = true;
+  $('btn-play').textContent = '⏸';
+  updateStats();
+  saveProgress();
+  speak(sentences[i], () => { if (playing) playFrom(i + 1); });
+}
+
+function stopAll() {
+  synth.cancel();
+  playing = false;
+  $('btn-play').textContent = '▶';
+  saveProgress();
+}
+
+$('btn-play').addEventListener('click', () => playing ? stopAll() : playFrom(idx));
+$('btn-restart').addEventListener('click', () => { const wp = playing; stopAll(); idx = 0; saveProgress(); updateStats(); if (wp) playFrom(0); });
+$('btn-prev').addEventListener('click', () => { const wp = playing; stopAll(); idx = Math.max(0, idx - 1); saveProgress(); updateStats(); if (wp) playFrom(idx); });
+$('btn-next').addEventListener('click', () => { const wp = playing; stopAll(); idx = Math.min(sentences.length - 1, idx + 1); saveProgress(); updateStats(); if (wp) playFrom(idx); });
+$('btn-change').addEventListener('click', () => { stopAll(); $('upload-section').style.display = 'block'; $('reader-section').style.display = 'none'; fileInput.value = ''; currentFileName = ''; });
+
+$('rate').addEventListener('input', () => { $('rate-val').textContent = parseFloat($('rate').value).toFixed(1) + 'x'; updateStats(); });
+$('pitch').addEventListener('input', () => { $('pitch-val').textContent = parseFloat($('pitch').value).toFixed(1); });
+$('vol').addEventListener('input', () => { $('vol-val').textContent = Math.round($('vol').value * 100) + '%'; });
+$('lang-select').addEventListener('change', () => { if (playing) { const i = idx; stopAll(); playFrom(i); } });
+
+// Search
+let searchResults = [], searchIdx = 0;
+
+$('btn-search').addEventListener('click', () => {
+  const bar = $('search-bar');
+  const isVisible = bar.style.display !== 'none';
+  bar.style.display = isVisible ? 'none' : 'block';
+  if (!isVisible) { $('search-input').focus(); doSearch(); }
+  else { clearSearch(); }
+});
+
+$('search-close').addEventListener('click', () => {
+  $('search-bar').style.display = 'none';
+  clearSearch();
+});
+
+$('search-input').addEventListener('input', doSearch);
+
+$('search-prev').addEventListener('click', () => {
+  if (!searchResults.length) return;
+  searchIdx = (searchIdx - 1 + searchResults.length) % searchResults.length;
+  highlightSearch();
+});
+
+$('search-next').addEventListener('click', () => {
+  if (!searchResults.length) return;
+  searchIdx = (searchIdx + 1) % searchResults.length;
+  highlightSearch();
+});
+
+$('search-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (!searchResults.length) return;
+    searchIdx = (searchIdx + 1) % searchResults.length;
+    highlightSearch();
+  }
+  if (e.key === 'Escape') { $('search-bar').style.display = 'none'; clearSearch(); }
+});
+
+function doSearch() {
+  const q = $('search-input').value.trim();
+  clearSearchHighlights();
+  searchResults = [];
+  if (!q) { $('search-count').textContent = ''; return; }
+  sentences.forEach((s, i) => {
+    if (s.toLowerCase().includes(q.toLowerCase())) searchResults.push(i);
+  });
+  $('search-count').textContent = searchResults.length ? '1 / ' + searchResults.length : '없음';
+  searchIdx = 0;
+  if (searchResults.length) {
+    searchResults.forEach(i => {
+      const el = $('s' + i);
+      if (el) el.classList.add('highlight');
+    });
+    highlightSearch();
+  }
+}
+
+function highlightSearch() {
+  searchResults.forEach(i => {
+    const el = $('s' + i);
+    if (el) { el.classList.remove('highlight-active'); el.classList.add('highlight'); }
+  });
+  const activeEl = $('s' + searchResults[searchIdx]);
+  if (activeEl) {
+    activeEl.classList.remove('highlight');
+    activeEl.classList.add('highlight-active');
+    activeEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+  $('search-count').textContent = (searchIdx + 1) + ' / ' + searchResults.length;
+}
+
+function clearSearchHighlights() {
+  document.querySelectorAll('.sentence').forEach(el => {
+    el.classList.remove('highlight', 'highlight-active');
+  });
+}
+
+function clearSearch() {
+  clearSearchHighlights();
+  searchResults = [];
+  $('search-input').value = '';
+  $('search-count').textContent = '';
+}
+
+// 검색 결과에서 해당 위치로 점프하는 버튼 (문장 클릭 시 이동)
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('highlight') || e.target.classList.contains('highlight-active')) {
+    const i = +e.target.dataset.i;
+    const wasPlaying = playing;
+    stopAll();
+    idx = i;
+    updateStats();
+    if (wasPlaying) playFrom(idx);
+    $('search-bar').style.display = 'none';
+    clearSearch();
+  }
+});
+
+// iOS background TTS workaround
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && playing) synth.pause();
+  else if (!document.hidden && playing) synth.resume();
+});
+
+}
+</script>
+</body>
+</html>
