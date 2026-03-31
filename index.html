@@ -311,7 +311,8 @@
 
       <div class="search-bar" id="search-bar" style="display:none">
         <div class="search-inner">
-          <input type="text" id="search-input" placeholder="🔍  찾을 내용 입력..." autocomplete="off" autocorrect="off" spellcheck="false">
+          <input type="text" id="search-input" placeholder="찾을 내용 입력..." autocomplete="off" autocorrect="off" spellcheck="false">
+          <button class="search-nav" id="search-go">찾기</button>
           <span class="search-count" id="search-count"></span>
           <button class="search-nav" id="search-prev">↑</button>
           <button class="search-nav" id="search-next">↓</button>
@@ -419,7 +420,6 @@ $('btn-resume-dismiss').addEventListener('click', () => {
 
 $('btn-resume').addEventListener('click', () => {
   $('resume-banner').classList.remove('show');
-  // Need user to re-load the file (browser security - can't re-open files)
   const saved = loadProgress();
   pendingResumeIdx = saved ? saved.idx : 0;
   if (saved && saved.lang) $('lang-select').value = saved.lang;
@@ -442,7 +442,6 @@ function loadFile(file) {
     const text = e.target.result;
     sentences = splitSentences(text);
     currentFileName = file.name;
-    // Resume from saved position if file name matches
     if (pendingResumeIdx > 0 && pendingResumeIdx < sentences.length) {
       idx = pendingResumeIdx;
     } else {
@@ -548,7 +547,7 @@ $('btn-search').addEventListener('click', () => {
   const bar = $('search-bar');
   const isVisible = bar.style.display !== 'none';
   bar.style.display = isVisible ? 'none' : 'block';
-  if (!isVisible) { $('search-input').focus(); doSearch(); }
+  if (!isVisible) { $('search-input').focus(); }
   else { clearSearch(); }
 });
 
@@ -557,7 +556,7 @@ $('search-close').addEventListener('click', () => {
   clearSearch();
 });
 
-$('search-input').addEventListener('input', doSearch);
+$('search-go').addEventListener('click', doSearch);
 
 $('search-prev').addEventListener('click', () => {
   if (!searchResults.length) return;
@@ -573,7 +572,7 @@ $('search-next').addEventListener('click', () => {
 
 $('search-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') {
-    if (!searchResults.length) return;
+    if (!searchResults.length) { doSearch(); return; }
     searchIdx = (searchIdx + 1) % searchResults.length;
     highlightSearch();
   }
@@ -626,7 +625,6 @@ function clearSearch() {
   $('search-count').textContent = '';
 }
 
-// 검색 결과에서 해당 위치로 점프하는 버튼 (문장 클릭 시 이동)
 document.addEventListener('click', e => {
   if (e.target.classList.contains('highlight') || e.target.classList.contains('highlight-active')) {
     const i = +e.target.dataset.i;
@@ -640,7 +638,6 @@ document.addEventListener('click', e => {
   }
 });
 
-// iOS background TTS workaround
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && playing) synth.pause();
   else if (!document.hidden && playing) synth.resume();
