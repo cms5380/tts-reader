@@ -553,10 +553,22 @@ function updateStats() {
   $('time-label').textContent = '약 ' + (m > 0 ? m + '분 ' : '') + s + '초 남음';
 }
 
-// Silent audio for Media Session (lock screen controls)
-const silentAudio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYoRwMHAAAAAAD/+1DEAAAIAANIAAAAQigA60gAAABEREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREf/7UMQ5g8AAAaQAAAAgAAA0gAAABERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERE=');
-silentAudio.loop = true;
-silentAudio.volume = 0.01;
+// Silent audio stream for Media Session (lock screen controls)
+let silentAudio = null;
+function initSilentAudio() {
+  if (silentAudio) return;
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const oscillator = ctx.createOscillator();
+  const gain = ctx.createGain();
+  gain.gain.value = 0.001;
+  oscillator.connect(gain);
+  const dest = ctx.createMediaStreamDestination();
+  gain.connect(dest);
+  oscillator.start();
+  silentAudio = new Audio();
+  silentAudio.srcObject = dest.stream;
+  silentAudio.loop = true;
+}
 
 function updateMediaSession() {
   if (!('mediaSession' in navigator)) return;
@@ -608,6 +620,7 @@ function playFrom(i) {
   $('btn-play').textContent = '⏸';
   updateStats();
   updateMediaSession();
+  initSilentAudio();
   silentAudio.play().catch(() => {});
   saveProgress();
   for (let j = 0; j < QUEUE_AHEAD && (i + j) < sentences.length; j++) {
@@ -619,7 +632,7 @@ function stopAll() {
   synth.cancel();
   playing = false;
   $('btn-play').textContent = '▶';
-  silentAudio.pause();
+  if (silentAudio) silentAudio.pause();
   saveProgress();
 }
 
