@@ -404,7 +404,6 @@ function clearProgress() {
   try { localStorage.removeItem(STORE_KEY); } catch(e) {}
 }
 
-// Show resume banner on load
 const saved = loadProgress();
 if (saved && saved.idx > 0) {
   $('resume-fname').textContent = saved.fileName;
@@ -430,7 +429,6 @@ $('btn-resume').addEventListener('click', () => {
 
 let pendingResumeIdx = -1;
 
-// Drag & drop
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('hover'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('hover'));
 dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('hover'); if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
@@ -500,26 +498,28 @@ function updateStats() {
   $('time-label').textContent = '약 ' + (m > 0 ? m + '분 ' : '') + s + '초 남음';
 }
 
-function speak(text, onEnd) {
-  synth.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = $('lang-select').value;
-  utt.rate = parseFloat($('rate').value);
-  utt.pitch = parseFloat($('pitch').value);
-  utt.volume = parseFloat($('vol').value);
-  utt.onend = onEnd;
-  utt.onerror = () => { playing = false; $('btn-play').textContent = '▶'; };
-  synth.speak(utt);
-}
-
 function playFrom(i) {
   if (i >= sentences.length) { stopAll(); clearProgress(); return; }
+  synth.cancel();
   idx = i;
   playing = true;
   $('btn-play').textContent = '⏸';
   updateStats();
   saveProgress();
-  speak(sentences[i], () => { if (playing) playFrom(i + 1); });
+  for (let j = i; j < sentences.length; j++) {
+    const utt = new SpeechSynthesisUtterance(sentences[j]);
+    utt.lang = $('lang-select').value;
+    utt.rate = parseFloat($('rate').value);
+    utt.pitch = parseFloat($('pitch').value);
+    utt.volume = parseFloat($('vol').value);
+    const si = j;
+    utt.onstart = () => { idx = si; updateStats(); saveProgress(); };
+    utt.onerror = () => { playing = false; $('btn-play').textContent = '▶'; };
+    if (j === sentences.length - 1) {
+      utt.onend = () => { if (playing) { stopAll(); clearProgress(); } };
+    }
+    synth.speak(utt);
+  }
 }
 
 function stopAll() {
