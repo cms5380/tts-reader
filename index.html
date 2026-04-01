@@ -60,7 +60,6 @@
     overflow: hidden;
   }
 
-  /* Upload */
   #upload-section { display: block; }
   #reader-section { display: none; }
 
@@ -79,7 +78,6 @@
   .drop-sub { font-size: 13px; color: var(--muted); line-height: 1.6; }
   #file-input { display: none; }
 
-  /* File info bar */
   .file-bar {
     padding: 14px 16px;
     display: flex;
@@ -104,7 +102,6 @@
     -webkit-appearance: none;
   }
 
-  /* Text display */
   #text-display {
     padding: 16px;
     height: 280px;
@@ -126,13 +123,11 @@
   .sentence.current { background: var(--accent-dim); color: var(--accent); font-weight: 500; }
   .sentence:active { opacity: 0.7; }
 
-  /* Progress */
   .progress-wrap { padding: 0 16px 10px; }
   .progress-track { height: 3px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
   .progress-fill { height: 100%; background: var(--accent); border-radius: 4px; width: 0%; transition: width 0.4s ease; }
   .progress-info { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 7px; }
 
-  /* Controls */
   .controls-card {
     background: var(--surface);
     border: 0.5px solid var(--border);
@@ -223,7 +218,6 @@
     line-height: 1.7;
   }
 
-  /* Search */
   .search-bar { padding: 8px 12px; border-bottom: 0.5px solid var(--border); background: var(--surface); }
   .search-inner { display: flex; align-items: center; gap: 6px; }
   .search-inner input {
@@ -243,7 +237,6 @@
   .sentence.highlight { background: rgba(232,201,122,0.25); border-radius: 4px; }
   .sentence.highlight-active { background: var(--accent); color: #0e0e10; font-weight: 500; border-radius: 4px; }
 
-  /* Resume banner */
   .resume-banner {
     display: none;
     background: var(--accent-dim);
@@ -262,7 +255,6 @@
   .btn-resume { background: var(--accent); color: #0e0e10; border: none; border-radius: var(--radius-sm); padding: 7px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; }
   .btn-resume-dismiss { background: transparent; border: 0.5px solid var(--border); color: var(--muted); border-radius: var(--radius-sm); padding: 7px 10px; font-size: 12px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; }
 
-  /* Animations */
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   .fade-in { animation: fadeIn 0.25s ease forwards; }
 </style>
@@ -498,27 +490,41 @@ function updateStats() {
   $('time-label').textContent = '약 ' + (m > 0 ? m + '분 ' : '') + s + '초 남음';
 }
 
+const QUEUE_AHEAD = 3;
+let queuedUpTo = -1;
+
+function enqueueNext() {
+  if (!playing) return;
+  const next = queuedUpTo + 1;
+  if (next >= sentences.length) return;
+  queuedUpTo = next;
+  const utt = new SpeechSynthesisUtterance(sentences[next]);
+  utt.lang = $('lang-select').value;
+  utt.rate = parseFloat($('rate').value);
+  utt.pitch = parseFloat($('pitch').value);
+  utt.volume = parseFloat($('vol').value);
+  const si = next;
+  utt.onstart = () => { idx = si; updateStats(); saveProgress(); };
+  utt.onend = () => {
+    if (!playing) return;
+    if (si + 1 >= sentences.length) { stopAll(); clearProgress(); return; }
+    enqueueNext();
+  };
+  utt.onerror = () => { playing = false; $('btn-play').textContent = '▶'; };
+  synth.speak(utt);
+}
+
 function playFrom(i) {
   if (i >= sentences.length) { stopAll(); clearProgress(); return; }
   synth.cancel();
   idx = i;
+  queuedUpTo = i - 1;
   playing = true;
   $('btn-play').textContent = '⏸';
   updateStats();
   saveProgress();
-  for (let j = i; j < sentences.length; j++) {
-    const utt = new SpeechSynthesisUtterance(sentences[j]);
-    utt.lang = $('lang-select').value;
-    utt.rate = parseFloat($('rate').value);
-    utt.pitch = parseFloat($('pitch').value);
-    utt.volume = parseFloat($('vol').value);
-    const si = j;
-    utt.onstart = () => { idx = si; updateStats(); saveProgress(); };
-    utt.onerror = () => { playing = false; $('btn-play').textContent = '▶'; };
-    if (j === sentences.length - 1) {
-      utt.onend = () => { if (playing) { stopAll(); clearProgress(); } };
-    }
-    synth.speak(utt);
+  for (let j = 0; j < QUEUE_AHEAD && (i + j) < sentences.length; j++) {
+    enqueueNext();
   }
 }
 
@@ -540,7 +546,6 @@ $('pitch').addEventListener('input', () => { $('pitch-val').textContent = parseF
 $('vol').addEventListener('input', () => { $('vol-val').textContent = Math.round($('vol').value * 100) + '%'; });
 $('lang-select').addEventListener('change', () => { if (playing) { const i = idx; stopAll(); playFrom(i); } });
 
-// Search
 let searchResults = [], searchIdx = 0;
 
 $('btn-search').addEventListener('click', () => {
