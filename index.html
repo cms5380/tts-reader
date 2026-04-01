@@ -491,7 +491,7 @@ function updateStats() {
   $('time-label').textContent = '약 ' + (m > 0 ? m + '분 ' : '') + s + '초 남음';
 }
 
-const QUEUE_AHEAD = 3;
+const QUEUE_AHEAD = 5;
 let queuedUpTo = -1;
 
 function enqueueNext() {
@@ -642,11 +642,6 @@ document.addEventListener('click', e => {
     $('search-bar').style.display = 'none';
     clearSearch();
   }
-});
-
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden && playing) synth.pause();
-  else if (!document.hidden && playing) synth.resume();
 });
 
 }
