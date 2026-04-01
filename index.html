@@ -370,17 +370,24 @@ const STORE_KEY = 'tts_progress';
 
 function saveProgress() {
   if (!currentFileName || sentences.length === 0) return;
+  const data = {
+    fileName: currentFileName,
+    idx: idx,
+    total: sentences.length,
+    lang: $('lang-select').value,
+    rate: $('rate').value,
+    sentences: sentences,
+    savedAt: Date.now()
+  };
   try {
-    localStorage.setItem(STORE_KEY, JSON.stringify({
-      fileName: currentFileName,
-      idx: idx,
-      total: sentences.length,
-      lang: $('lang-select').value,
-      rate: $('rate').value,
-      sentences: sentences,
-      savedAt: Date.now()
-    }));
-  } catch(e) {}
+    const json = JSON.stringify(data);
+    localStorage.setItem(STORE_KEY, json);
+  } catch(e) {
+    try {
+      data.sentences = null;
+      localStorage.setItem(STORE_KEY, JSON.stringify(data));
+    } catch(e2) {}
+  }
 }
 
 function loadProgress() {
@@ -396,11 +403,13 @@ function clearProgress() {
 }
 
 const saved = loadProgress();
-if (saved && saved.idx > 0) {
+if (saved && saved.idx > 0 && saved.sentences && saved.sentences.length > 0) {
   $('resume-fname').textContent = saved.fileName;
   const pct = Math.round((saved.idx / saved.total) * 100);
   $('resume-sub').textContent = saved.idx + '번째 문장 · ' + pct + '% 진행됨';
   $('resume-banner').classList.add('show');
+} else if (saved && saved.idx > 0) {
+  clearProgress();
 }
 
 $('btn-resume-dismiss').addEventListener('click', () => {
@@ -413,14 +422,14 @@ let pendingResumeIdx = -1;
 $('btn-resume').addEventListener('click', () => {
   $('resume-banner').classList.remove('show');
   const saved = loadProgress();
-  if (!saved) return;
-  if (saved.sentences && saved.sentences.length > 0) {
+  if (!saved) { alert('저장된 진행 상태가 없습니다.'); return; }
+  if (saved.sentences && Array.isArray(saved.sentences) && saved.sentences.length > 0) {
     sentences = saved.sentences;
-    currentFileName = saved.fileName;
+    currentFileName = saved.fileName || '';
     idx = saved.idx || 0;
     if (saved.lang) $('lang-select').value = saved.lang;
     if (saved.rate) { $('rate').value = saved.rate; $('rate-val').textContent = parseFloat(saved.rate).toFixed(1) + 'x'; }
-    $('file-name').textContent = saved.fileName;
+    $('file-name').textContent = currentFileName;
     $('file-meta').textContent = sentences.length + ' 문장';
     renderText();
     $('upload-section').style.display = 'none';
