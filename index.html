@@ -410,21 +410,31 @@ $('btn-resume-dismiss').addEventListener('click', () => {
   clearProgress();
 });
 
+let pendingResumeIdx = -1;
+
 $('btn-resume').addEventListener('click', () => {
   $('resume-banner').classList.remove('show');
   const saved = loadProgress();
-  if (!saved || !saved.sentences) return;
-  sentences = saved.sentences;
-  currentFileName = saved.fileName;
-  idx = saved.idx || 0;
-  if (saved.lang) $('lang-select').value = saved.lang;
-  if (saved.rate) { $('rate').value = saved.rate; $('rate-val').textContent = parseFloat(saved.rate).toFixed(1) + 'x'; }
-  $('file-name').textContent = saved.fileName;
-  $('file-meta').textContent = sentences.length + ' 문장';
-  renderText();
-  $('upload-section').style.display = 'none';
-  $('reader-section').style.display = 'block';
-  updateStats();
+  if (!saved) return;
+  if (saved.sentences && saved.sentences.length > 0) {
+    sentences = saved.sentences;
+    currentFileName = saved.fileName;
+    idx = saved.idx || 0;
+    if (saved.lang) $('lang-select').value = saved.lang;
+    if (saved.rate) { $('rate').value = saved.rate; $('rate-val').textContent = parseFloat(saved.rate).toFixed(1) + 'x'; }
+    $('file-name').textContent = saved.fileName;
+    $('file-meta').textContent = sentences.length + ' 문장';
+    renderText();
+    $('upload-section').style.display = 'none';
+    $('reader-section').style.display = 'block';
+    updateStats();
+  } else {
+    pendingResumeIdx = saved.idx || 0;
+    if (saved.lang) $('lang-select').value = saved.lang;
+    if (saved.rate) { $('rate').value = saved.rate; $('rate-val').textContent = parseFloat(saved.rate).toFixed(1) + 'x'; }
+    alert('같은 파일(' + (saved.fileName || '') + ')을 선택해주세요.');
+    fileInput.click();
+  }
 });
 
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('hover'); });
@@ -438,7 +448,12 @@ function loadFile(file) {
     const text = e.target.result;
     sentences = splitSentences(text);
     currentFileName = file.name;
-    idx = 0;
+    if (pendingResumeIdx > 0 && pendingResumeIdx < sentences.length) {
+      idx = pendingResumeIdx;
+    } else {
+      idx = 0;
+    }
+    pendingResumeIdx = -1;
     $('file-name').textContent = file.name;
     $('file-meta').textContent = sentences.length + ' 문장 · ' + Math.round(text.length / 1000) + 'KB';
     renderText();
