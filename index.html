@@ -44,76 +44,55 @@
     gap: 12px;
   }
 
-  header {
-    padding: 12px 0 4px;
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-  }
+  header { padding: 12px 0 4px; display: flex; align-items: baseline; gap: 10px; }
   header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
   header span { font-size: 12px; color: var(--muted); }
 
-  .card {
-    background: var(--surface);
-    border: 0.5px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 
   #upload-section { display: block; }
   #reader-section { display: none; }
 
-  .drop-zone {
-    padding: 40px 24px;
-    text-align: center;
-    cursor: pointer;
-    border: 1.5px dashed var(--faint);
-    border-radius: var(--radius);
-    transition: border-color 0.2s, background 0.2s;
-    background: transparent;
-  }
+  .drop-zone { padding: 30px 24px; text-align: center; cursor: pointer; border: 1.5px dashed var(--faint); border-radius: var(--radius); transition: border-color 0.2s, background 0.2s; background: transparent; }
   .drop-zone.hover { border-color: var(--accent); background: var(--accent-dim); }
-  .drop-icon { font-size: 40px; margin-bottom: 12px; display: block; }
-  .drop-title { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+  .drop-icon { font-size: 36px; margin-bottom: 10px; display: block; }
+  .drop-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
   .drop-sub { font-size: 13px; color: var(--muted); line-height: 1.6; }
   #file-input { display: none; }
 
-  .file-bar {
-    padding: 14px 16px;
+  .library { margin-top: 4px; }
+  .library-title { font-size: 14px; font-weight: 500; color: var(--muted); padding: 8px 0; }
+  .library-list { display: flex; flex-direction: column; gap: 8px; }
+  .lib-item {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 0.5px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
   }
+  .lib-item:active { background: var(--surface2); }
+  .lib-info { min-width: 0; flex: 1; }
+  .lib-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lib-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .lib-progress { width: 60px; height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; margin-top: 4px; }
+  .lib-progress-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+  .lib-delete {
+    background: none; border: none; color: var(--faint); font-size: 16px; cursor: pointer; padding: 6px 2px 6px 10px; flex-shrink: 0;
+  }
+  .lib-delete:active { color: var(--danger); }
+
+  .file-bar { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 0.5px solid var(--border); }
   .file-info { min-width: 0; }
   .file-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
   .file-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-  .lang-select {
-    font-size: 13px;
-    font-family: 'Noto Sans KR', sans-serif;
-    background: var(--surface2);
-    color: var(--text);
-    border: 0.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 6px 10px;
-    cursor: pointer;
-    outline: none;
-    -webkit-appearance: none;
-  }
+  .lang-select { font-size: 13px; font-family: 'Noto Sans KR', sans-serif; background: var(--surface2); color: var(--text); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px; cursor: pointer; outline: none; -webkit-appearance: none; }
 
-  #text-display {
-    padding: 16px;
-    height: 280px;
-    overflow-y: auto;
-    font-size: 15px;
-    line-height: 1.9;
-    color: var(--text);
-    white-space: pre-wrap;
-    word-break: break-word;
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-  }
+  #text-display { padding: 16px; height: 280px; overflow-y: auto; font-size: 15px; line-height: 1.9; color: var(--text); white-space: pre-wrap; word-break: break-word; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
   #text-display::-webkit-scrollbar { width: 3px; }
   #text-display::-webkit-scrollbar-track { background: transparent; }
   #text-display::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 4px; }
@@ -128,49 +107,13 @@
   .progress-fill { height: 100%; background: var(--accent); border-radius: 4px; width: 0%; transition: width 0.4s ease; }
   .progress-info { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 7px; }
 
-  .controls-card {
-    background: var(--surface);
-    border: 0.5px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-  }
+  .controls-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .btn-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 16px; }
 
-  .btn-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 16px;
-  }
-
-  .btn {
-    border: 0.5px solid var(--border);
-    background: var(--surface2);
-    color: var(--text);
-    font-family: 'Noto Sans KR', sans-serif;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: opacity 0.15s, transform 0.1s, background 0.15s;
-    font-size: 13px;
-    padding: 8px 14px;
-    white-space: nowrap;
-  }
+  .btn { border: 0.5px solid var(--border); background: var(--surface2); color: var(--text); font-family: 'Noto Sans KR', sans-serif; border-radius: var(--radius-sm); cursor: pointer; transition: opacity 0.15s, transform 0.1s, background 0.15s; font-size: 13px; padding: 8px 14px; white-space: nowrap; }
   .btn:active { transform: scale(0.95); opacity: 0.8; }
 
-  .btn-play {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    font-size: 22px;
-    background: var(--accent);
-    color: #0e0e10;
-    border: none;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
+  .btn-play { width: 56px; height: 56px; border-radius: 50%; font-size: 22px; background: var(--accent); color: #0e0e10; border: none; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .btn-play:active { transform: scale(0.93); }
 
   .sliders { display: flex; flex-direction: column; gap: 10px; }
@@ -178,60 +121,19 @@
   .slider-label { font-size: 12px; color: var(--muted); width: 32px; flex-shrink: 0; }
   .slider-val { font-size: 12px; color: var(--muted); width: 38px; text-align: right; flex-shrink: 0; }
 
-  input[type=range] {
-    flex: 1;
-    height: 3px;
-    -webkit-appearance: none;
-    appearance: none;
-    background: var(--surface2);
-    border-radius: 4px;
-    outline: none;
-  }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--accent);
-    cursor: pointer;
-    border: 3px solid var(--bg);
-    box-shadow: 0 0 0 1px var(--accent);
-  }
+  input[type=range] { flex: 1; height: 3px; -webkit-appearance: none; appearance: none; background: var(--surface2); border-radius: 4px; outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 3px solid var(--bg); box-shadow: 0 0 0 1px var(--accent); }
 
-  .btn-change {
-    width: 100%;
-    margin-top: 12px;
-    padding: 10px;
-    text-align: center;
-    color: var(--muted);
-    border-color: var(--border);
-    font-size: 13px;
-    background: transparent;
-    border-radius: var(--radius-sm);
-  }
+  .btn-change { width: 100%; margin-top: 12px; padding: 10px; text-align: center; color: var(--muted); border-color: var(--border); font-size: 13px; background: transparent; border-radius: var(--radius-sm); }
 
-  .no-support {
-    padding: 40px 24px;
-    text-align: center;
-    color: var(--danger);
-    font-size: 14px;
-    line-height: 1.7;
-  }
+  .no-support { padding: 40px 24px; text-align: center; color: var(--danger); font-size: 14px; line-height: 1.7; }
 
   .search-bar { padding: 8px 12px; border-bottom: 0.5px solid var(--border); background: var(--surface); }
   .search-inner { display: flex; align-items: center; gap: 6px; }
-  .search-inner input {
-    flex: 1; background: var(--surface2); border: 0.5px solid var(--border);
-    border-radius: var(--radius-sm); padding: 7px 12px; font-size: 14px;
-    color: var(--text); font-family: 'Noto Sans KR', sans-serif; outline: none;
-  }
+  .search-inner input { flex: 1; background: var(--surface2); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 7px 12px; font-size: 14px; color: var(--text); font-family: 'Noto Sans KR', sans-serif; outline: none; }
   .search-inner input:focus { border-color: var(--accent); }
   .search-count { font-size: 11px; color: var(--muted); white-space: nowrap; min-width: 40px; text-align: center; }
-  .search-nav {
-    width: 30px; height: 30px; background: var(--surface2); border: 0.5px solid var(--border);
-    border-radius: 8px; color: var(--text); cursor: pointer; font-size: 13px;
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  }
+  .search-nav { width: 30px; height: 30px; background: var(--surface2); border: 0.5px solid var(--border); border-radius: 8px; color: var(--text); cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .search-nav:active { transform: scale(0.93); }
   .search-close { background: transparent; border: none; color: var(--muted); font-size: 16px; cursor: pointer; padding: 4px; flex-shrink: 0; }
   .sentence.highlight { background: rgba(232,201,122,0.25); border-radius: 4px; }
@@ -239,36 +141,10 @@
 
   .search-results { max-height: 200px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .search-results:empty { display: none; }
-  .search-result-item {
-    padding: 10px 12px;
-    font-size: 13px;
-    line-height: 1.5;
-    color: var(--text);
-    border-top: 0.5px solid var(--border);
-    cursor: pointer;
-    transition: background 0.15s;
-  }
+  .search-result-item { padding: 10px 12px; font-size: 13px; line-height: 1.5; color: var(--text); border-top: 0.5px solid var(--border); cursor: pointer; transition: background 0.15s; }
   .search-result-item:active { background: var(--accent-dim); }
   .search-result-item .sr-num { color: var(--muted); font-size: 11px; margin-right: 6px; }
   .search-result-item mark { background: var(--accent); color: #0e0e10; border-radius: 2px; padding: 0 2px; }
-
-  .resume-banner {
-    display: none;
-    background: var(--accent-dim);
-    border: 0.5px solid rgba(232,201,122,0.3);
-    border-radius: var(--radius);
-    padding: 12px 16px;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-  }
-  .resume-banner.show { display: flex; }
-  .resume-info { font-size: 13px; line-height: 1.5; }
-  .resume-title { font-weight: 500; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
-  .resume-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .resume-btns { display: flex; gap: 6px; flex-shrink: 0; }
-  .btn-resume { background: var(--accent); color: #0e0e10; border: none; border-radius: var(--radius-sm); padding: 7px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; }
-  .btn-resume-dismiss { background: transparent; border: 0.5px solid var(--border); color: var(--muted); border-radius: var(--radius-sm); padding: 7px 10px; font-size: 12px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; }
 
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   .fade-in { animation: fadeIn 0.25s ease forwards; }
@@ -276,29 +152,17 @@
 </head>
 <body>
 <div id="app">
-  <header>
-    <h1>텍듣</h1>
-    <span>Text to Speech</span>
-  </header>
-
-  <div class="resume-banner" id="resume-banner">
-    <div class="resume-info">
-      <div class="resume-title" id="resume-fname">—</div>
-      <div class="resume-sub" id="resume-sub">이어서 듣기</div>
-    </div>
-    <div class="resume-btns">
-      <button class="btn-resume-dismiss" id="btn-resume-dismiss">무시</button>
-      <button class="btn-resume" id="btn-resume">▶ 이어듣기</button>
-    </div>
-  </div>
-
   <div id="upload-section">
     <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
       <span class="drop-icon">📄</span>
       <div class="drop-title">파일을 선택하세요</div>
-      <div class="drop-sub">.txt 파일을 탭하여 불러오기<br>드래그&드롭도 가능해요</div>
+      <div class="drop-sub">.txt 파일을 탭하여 불러오기</div>
     </div>
-    <input type="file" id="file-input" accept=".txt,text/plain">
+    <input type="file" id="file-input" accept=".txt,text/plain" multiple>
+    <div class="library" id="library">
+      <div class="library-title" id="library-title" style="display:none">저장된 파일</div>
+      <div class="library-list" id="library-list"></div>
+    </div>
   </div>
 
   <div id="reader-section">
@@ -373,143 +237,182 @@ if (!synth) {
 } else {
 
 let sentences = [], idx = 0, playing = false;
-let currentFileName = '';
+let currentFileName = '', currentFileId = '';
+let rawText = '';
 
 const $ = id => document.getElementById(id);
 const dropZone = $('drop-zone');
 const fileInput = $('file-input');
 
 const DB_NAME = 'tts_reader';
-const DB_STORE = 'progress';
-const DB_KEY = 'current';
+const DB_VER = 2;
+const DB_STORE = 'files';
 
 function openDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = () => { req.result.createObjectStore(DB_STORE); };
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = (e) => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(DB_STORE)) {
+        db.createObjectStore(DB_STORE, { keyPath: 'id' });
+      }
+      if (db.objectStoreNames.contains('progress')) {
+        db.deleteObjectStore('progress');
+      }
+    };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
 }
 
-let rawText = '';
-
-async function saveProgress() {
-  if (!currentFileName || sentences.length === 0) return;
+async function saveFile(id, data) {
   try {
     const db = await openDB();
     const tx = db.transaction(DB_STORE, 'readwrite');
-    tx.objectStore(DB_STORE).put({
-      fileName: currentFileName,
-      idx: idx,
-      total: sentences.length,
-      lang: $('lang-select').value,
-      rate: $('rate').value,
-      rawText: rawText,
-      savedAt: Date.now()
-    }, DB_KEY);
+    tx.objectStore(DB_STORE).put({ id, ...data });
   } catch(e) {}
 }
 
-async function loadProgress() {
+async function loadFile(id) {
   try {
     const db = await openDB();
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const tx = db.transaction(DB_STORE, 'readonly');
-      const req = tx.objectStore(DB_STORE).get(DB_KEY);
+      const req = tx.objectStore(DB_STORE).get(id);
       req.onsuccess = () => resolve(req.result || null);
       req.onerror = () => resolve(null);
     });
   } catch(e) { return null; }
 }
 
-async function clearProgress() {
+async function loadAllFiles() {
+  try {
+    const db = await openDB();
+    return new Promise(resolve => {
+      const tx = db.transaction(DB_STORE, 'readonly');
+      const req = tx.objectStore(DB_STORE).getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => resolve([]);
+    });
+  } catch(e) { return []; }
+}
+
+async function deleteFile(id) {
   try {
     const db = await openDB();
     const tx = db.transaction(DB_STORE, 'readwrite');
-    tx.objectStore(DB_STORE).delete(DB_KEY);
+    tx.objectStore(DB_STORE).delete(id);
   } catch(e) {}
 }
 
-try {
-  const old = localStorage.getItem('tts_progress');
-  if (old) { localStorage.removeItem('tts_progress'); }
-} catch(e) {}
+async function saveProgress() {
+  if (!currentFileId || sentences.length === 0) return;
+  await saveFile(currentFileId, {
+    fileName: currentFileName,
+    idx: idx,
+    total: sentences.length,
+    lang: $('lang-select').value,
+    rate: $('rate').value,
+    rawText: rawText,
+    savedAt: Date.now()
+  });
+}
 
-loadProgress().then(saved => {
-  if (saved && saved.idx > 0 && saved.rawText) {
-    $('resume-fname').textContent = saved.fileName;
-    const pct = Math.round((saved.idx / saved.total) * 100);
-    $('resume-sub').textContent = saved.idx + '번째 문장 · ' + pct + '% 진행됨';
-    $('resume-banner').classList.add('show');
-  }
-});
+async function renderLibrary() {
+  const files = await loadAllFiles();
+  const list = $('library-list');
+  const title = $('library-title');
+  if (!files.length) { list.innerHTML = ''; title.style.display = 'none'; return; }
+  title.style.display = 'block';
+  files.sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+  list.innerHTML = files.map(f => {
+    const pct = f.total > 1 ? Math.round((f.idx / (f.total - 1)) * 100) : 0;
+    return '<div class="lib-item" data-id="' + f.id + '">' +
+      '<div class="lib-info">' +
+        '<div class="lib-name">' + escapeHtml(f.fileName) + '</div>' +
+        '<div class="lib-meta">' + f.total + ' 문장 · ' + pct + '% 진행</div>' +
+        '<div class="lib-progress"><div class="lib-progress-fill" style="width:' + pct + '%"></div></div>' +
+      '</div>' +
+      '<button class="lib-delete" data-id="' + f.id + '">✕</button>' +
+    '</div>';
+  }).join('');
+  list.querySelectorAll('.lib-item').forEach(el => {
+    el.addEventListener('click', async (e) => {
+      if (e.target.classList.contains('lib-delete')) return;
+      await openFromLibrary(el.dataset.id);
+    });
+  });
+  list.querySelectorAll('.lib-delete').forEach(el => {
+    el.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await deleteFile(el.dataset.id);
+      renderLibrary();
+    });
+  });
+}
 
-$('btn-resume-dismiss').addEventListener('click', () => {
-  $('resume-banner').classList.remove('show');
-  clearProgress();
-});
-
-let pendingResumeIdx = -1;
-
-$('btn-resume').addEventListener('click', async () => {
-  $('btn-resume').textContent = '불러오는 중...';
-  $('btn-resume').disabled = true;
-  $('btn-resume-dismiss').disabled = true;
-  const saved = await loadProgress();
-  if (!saved || !saved.rawText) {
-    $('resume-banner').classList.remove('show');
-    $('btn-resume').textContent = '▶ 이어듣기';
-    $('btn-resume').disabled = false;
-    $('btn-resume-dismiss').disabled = false;
-    alert('저장된 진행 상태가 없습니다. 파일을 다시 선택해주세요.');
-    return;
-  }
+async function openFromLibrary(id) {
+  const saved = await loadFile(id);
+  if (!saved || !saved.rawText) { alert('파일 데이터를 찾을 수 없습니다.'); return; }
   rawText = saved.rawText;
   sentences = splitSentences(rawText);
   currentFileName = saved.fileName || '';
+  currentFileId = id;
   idx = Math.min(saved.idx || 0, sentences.length - 1);
   if (saved.lang) $('lang-select').value = saved.lang;
   if (saved.rate) { $('rate').value = saved.rate; $('rate-val').textContent = parseFloat(saved.rate).toFixed(1) + 'x'; }
   $('file-name').textContent = currentFileName;
   $('file-meta').textContent = sentences.length + ' 문장';
   renderText();
-  $('resume-banner').classList.remove('show');
-  $('btn-resume').textContent = '▶ 이어듣기';
-  $('btn-resume').disabled = false;
-  $('btn-resume-dismiss').disabled = false;
   $('upload-section').style.display = 'none';
   $('reader-section').style.display = 'block';
   updateStats();
-});
+}
+
+renderLibrary();
+try { localStorage.removeItem('tts_progress'); } catch(e) {}
 
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('hover'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('hover'));
-dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('hover'); if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
-fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('hover'); handleFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', () => { handleFiles(fileInput.files); fileInput.value = ''; });
 
-function loadFile(file) {
+function handleFiles(files) {
+  for (let i = 0; i < files.length; i++) {
+    loadFileToLibrary(files[i], i === files.length - 1);
+  }
+}
+
+function loadFileToLibrary(file, isLast) {
   $('drop-zone').innerHTML = '<div class="drop-title">불러오는 중...</div><div class="drop-sub">' + file.name + '</div>';
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = async e => {
     const text = e.target.result;
-    rawText = text;
-    sentences = splitSentences(text);
-    currentFileName = file.name;
-    if (pendingResumeIdx > 0 && pendingResumeIdx < sentences.length) {
-      idx = pendingResumeIdx;
-    } else {
+    const sents = splitSentences(text);
+    const id = file.name + '_' + Date.now();
+    await saveFile(id, {
+      fileName: file.name,
+      idx: 0,
+      total: sents.length,
+      lang: 'ko-KR',
+      rate: '1',
+      rawText: text,
+      savedAt: Date.now()
+    });
+    if (isLast) {
+      rawText = text;
+      sentences = sents;
+      currentFileName = file.name;
+      currentFileId = id;
       idx = 0;
+      $('file-name').textContent = file.name;
+      $('file-meta').textContent = sentences.length + ' 문장 · ' + Math.round(text.length / 1000) + 'KB';
+      renderText();
+      $('upload-section').style.display = 'none';
+      $('reader-section').style.display = 'block';
+      updateStats();
+      $('drop-zone').innerHTML = '<span class="drop-icon">📄</span><div class="drop-title">파일을 선택하세요</div><div class="drop-sub">.txt 파일을 탭하여 불러오기</div>';
     }
-    pendingResumeIdx = -1;
-    $('file-name').textContent = file.name;
-    $('file-meta').textContent = sentences.length + ' 문장 · ' + Math.round(text.length / 1000) + 'KB';
-    renderText();
-    $('upload-section').style.display = 'none';
-    $('reader-section').style.display = 'block';
-    updateStats();
-    saveProgress();
-    $('drop-zone').innerHTML = '<span class="drop-icon">📄</span><div class="drop-title">파일을 선택하세요</div><div class="drop-sub">.txt 파일을 탭하여 불러오기<br>드래그&드롭도 가능해요</div>';
   };
   reader.readAsText(file, 'UTF-8');
 }
@@ -605,7 +508,7 @@ function enqueueNext() {
   utt.onstart = () => { idx = si; updateStats(); updateMediaSession(); saveProgress(); };
   utt.onend = () => {
     if (!playing) return;
-    if (si + 1 >= sentences.length) { stopAll(); clearProgress(); return; }
+    if (si + 1 >= sentences.length) { stopAll(); return; }
     enqueueNext();
   };
   utt.onerror = () => { playing = false; $('btn-play').textContent = '▶'; };
@@ -613,7 +516,7 @@ function enqueueNext() {
 }
 
 function playFrom(i) {
-  if (i >= sentences.length) { stopAll(); clearProgress(); return; }
+  if (i >= sentences.length) { stopAll(); return; }
   synth.cancel();
   idx = i;
   queuedUpTo = i - 1;
@@ -641,7 +544,7 @@ $('btn-play').addEventListener('click', () => playing ? stopAll() : playFrom(idx
 $('btn-restart').addEventListener('click', () => { const wp = playing; stopAll(); idx = 0; saveProgress(); updateStats(); if (wp) playFrom(0); });
 $('btn-prev').addEventListener('click', () => { const wp = playing; stopAll(); idx = Math.max(0, idx - 1); saveProgress(); updateStats(); if (wp) playFrom(idx); });
 $('btn-next').addEventListener('click', () => { const wp = playing; stopAll(); idx = Math.min(sentences.length - 1, idx + 1); saveProgress(); updateStats(); if (wp) playFrom(idx); });
-$('btn-change').addEventListener('click', () => { stopAll(); $('upload-section').style.display = 'block'; $('reader-section').style.display = 'none'; fileInput.value = ''; currentFileName = ''; });
+$('btn-change').addEventListener('click', () => { stopAll(); $('upload-section').style.display = 'block'; $('reader-section').style.display = 'none'; currentFileName = ''; currentFileId = ''; renderLibrary(); });
 
 $('rate').addEventListener('input', () => { $('rate-val').textContent = parseFloat($('rate').value).toFixed(1) + 'x'; updateStats(); });
 $('pitch').addEventListener('input', () => { $('pitch-val').textContent = parseFloat($('pitch').value).toFixed(1); });
