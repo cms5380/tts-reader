@@ -44,10 +44,6 @@
     gap: 12px;
   }
 
-  header { padding: 12px 0 4px; display: flex; align-items: baseline; gap: 10px; }
-  header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
-  header span { font-size: 12px; color: var(--muted); }
-
   .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 
   #upload-section { display: block; }
@@ -200,7 +196,6 @@
 
     <div class="controls-card fade-in">
       <div class="btn-row">
-        <button class="btn" id="btn-restart">↩ 처음</button>
         <button class="btn" id="btn-prev">◀ 이전</button>
         <button class="btn btn-play" id="btn-play">▶</button>
         <button class="btn" id="btn-next">다음 ▶</button>
@@ -212,16 +207,6 @@
           <span class="slider-label">속도</span>
           <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1">
           <span class="slider-val" id="rate-val">1.0x</span>
-        </div>
-        <div class="slider-row">
-          <span class="slider-label">음높이</span>
-          <input type="range" id="pitch" min="0.5" max="2" step="0.1" value="1">
-          <span class="slider-val" id="pitch-val">1.0</span>
-        </div>
-        <div class="slider-row">
-          <span class="slider-label">볼륨</span>
-          <input type="range" id="vol" min="0" max="1" step="0.05" value="1">
-          <span class="slider-val" id="vol-val">100%</span>
         </div>
       </div>
 
@@ -424,14 +409,17 @@ function splitSentences(text) {
 }
 
 function renderText() {
+  prevIdx = -1;
   $('text-display').innerHTML = sentences.map((s, i) =>
     `<span class="sentence" id="s${i}" data-i="${i}">${escapeHtml(s)}&nbsp;</span>`
   ).join('');
+  updateAllSentenceStyles();
   document.querySelectorAll('.sentence').forEach(el => {
     el.addEventListener('click', () => {
       const wasPlaying = playing;
       stopAll();
       idx = +el.dataset.i;
+      updateAllSentenceStyles();
       updateStats();
       if (wasPlaying) playFrom(idx);
     });
@@ -442,12 +430,20 @@ function escapeHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+let prevIdx = -1;
+
 function updateStats() {
-  document.querySelectorAll('.sentence').forEach((el, i) => {
-    el.className = 'sentence' + (i < idx ? ' done' : i === idx ? ' current' : '');
-  });
-  const cur = $('s' + idx);
-  if (cur) cur.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  if (prevIdx >= 0 && prevIdx !== idx) {
+    const prevEl = $('s' + prevIdx);
+    if (prevEl) prevEl.className = 'sentence done';
+  }
+  const curEl = $('s' + idx);
+  if (curEl) {
+    curEl.className = 'sentence current';
+    curEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+  prevIdx = idx;
+
   const pct = sentences.length > 1 ? (idx / (sentences.length - 1)) * 100 : 0;
   $('progress-fill').style.width = Math.round(pct) + '%';
   $('pos-label').textContent = (idx + 1) + ' / ' + sentences.length + ' \ubb38\uc7a5';
@@ -456,6 +452,12 @@ function updateStats() {
   const secs = Math.round((remaining * 12) / (rate * 2.5));
   const m = Math.floor(secs / 60), s = secs % 60;
   $('time-label').textContent = '\uc57d ' + (m > 0 ? m + '\ubd84 ' : '') + s + '\ucd08 \ub0a8\uc74c';
+}
+
+function updateAllSentenceStyles() {
+  document.querySelectorAll('.sentence').forEach((el, i) => {
+    el.className = 'sentence' + (i < idx ? ' done' : i === idx ? ' current' : '');
+  });
 }
 
 let silentAudio = null;
@@ -484,10 +486,10 @@ function updateMediaSession() {
   navigator.mediaSession.setActionHandler('play', () => { playFrom(idx); });
   navigator.mediaSession.setActionHandler('pause', () => { stopAll(); });
   navigator.mediaSession.setActionHandler('previoustrack', () => {
-    const wp = playing; stopAll(); idx = Math.max(0, idx - 1); saveProgress(); updateStats(); if (wp) playFrom(idx);
+    const wp = playing; stopAll(); idx = Math.max(0, idx - 1); updateAllSentenceStyles(); saveProgress(); updateStats(); if (wp) playFrom(idx);
   });
   navigator.mediaSession.setActionHandler('nexttrack', () => {
-    const wp = playing; stopAll(); idx = Math.min(sentences.length - 1, idx + 1); saveProgress(); updateStats(); if (wp) playFrom(idx);
+    const wp = playing; stopAll(); idx = Math.min(sentences.length - 1, idx + 1); updateAllSentenceStyles(); saveProgress(); updateStats(); if (wp) playFrom(idx);
   });
 }
 
@@ -502,8 +504,8 @@ function enqueueNext() {
   const utt = new SpeechSynthesisUtterance(sentences[next]);
   utt.lang = $('lang-select').value;
   utt.rate = parseFloat($('rate').value);
-  utt.pitch = parseFloat($('pitch').value);
-  utt.volume = parseFloat($('vol').value);
+  utt.pitchMultiplier = 1.0;
+  utt.volume = 1.0;
   const si = next;
   utt.onstart = () => { idx = si; updateStats(); updateMediaSession(); saveProgress(); };
   utt.onend = () => {
@@ -541,14 +543,11 @@ function stopAll() {
 }
 
 $('btn-play').addEventListener('click', () => playing ? stopAll() : playFrom(idx));
-$('btn-restart').addEventListener('click', () => { const wp = playing; stopAll(); idx = 0; saveProgress(); updateStats(); if (wp) playFrom(0); });
-$('btn-prev').addEventListener('click', () => { const wp = playing; stopAll(); idx = Math.max(0, idx - 1); saveProgress(); updateStats(); if (wp) playFrom(idx); });
-$('btn-next').addEventListener('click', () => { const wp = playing; stopAll(); idx = Math.min(sentences.length - 1, idx + 1); saveProgress(); updateStats(); if (wp) playFrom(idx); });
+$('btn-prev').addEventListener('click', () => { const wp = playing; stopAll(); idx = Math.max(0, idx - 1); updateAllSentenceStyles(); saveProgress(); updateStats(); if (wp) playFrom(idx); });
+$('btn-next').addEventListener('click', () => { const wp = playing; stopAll(); idx = Math.min(sentences.length - 1, idx + 1); updateAllSentenceStyles(); saveProgress(); updateStats(); if (wp) playFrom(idx); });
 $('btn-change').addEventListener('click', () => { stopAll(); $('upload-section').style.display = 'block'; $('reader-section').style.display = 'none'; currentFileName = ''; currentFileId = ''; renderLibrary(); });
 
 $('rate').addEventListener('input', () => { $('rate-val').textContent = parseFloat($('rate').value).toFixed(1) + 'x'; updateStats(); });
-$('pitch').addEventListener('input', () => { $('pitch-val').textContent = parseFloat($('pitch').value).toFixed(1); });
-$('vol').addEventListener('input', () => { $('vol-val').textContent = Math.round($('vol').value * 100) + '%'; });
 $('lang-select').addEventListener('change', () => { if (playing) { const i = idx; stopAll(); playFrom(i); } });
 
 let searchResults = [], searchIdx = 0;
@@ -606,6 +605,7 @@ function renderSearchResults(query) {
       const wasPlaying = playing;
       stopAll();
       idx = i;
+      updateAllSentenceStyles();
       updateStats();
       if (wasPlaying) playFrom(idx);
       $('search-bar').style.display = 'none';
