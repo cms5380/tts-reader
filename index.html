@@ -235,6 +235,21 @@
   .sentence.highlight { background: rgba(232,201,122,0.25); border-radius: 4px; }
   .sentence.highlight-active { background: var(--accent); color: #0e0e10; font-weight: 500; border-radius: 4px; }
 
+  .search-results { max-height: 200px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .search-results:empty { display: none; }
+  .search-result-item {
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text);
+    border-top: 0.5px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .search-result-item:active { background: var(--accent-dim); }
+  .search-result-item .sr-num { color: var(--muted); font-size: 11px; margin-right: 6px; }
+  .search-result-item mark { background: var(--accent); color: #0e0e10; border-radius: 2px; padding: 0 2px; }
+
   .resume-banner {
     display: none;
     background: var(--accent-dim);
@@ -293,9 +308,6 @@
         </div>
         <select class="lang-select" id="lang-select">
           <option value="ko-KR">🇰🇷 한국어</option>
-          <option value="en-US">🇺🇸 English</option>
-          <option value="ja-JP">🇯🇵 日本語</option>
-          <option value="zh-CN">🇨🇳 中文</option>
         </select>
       </div>
 
@@ -304,10 +316,9 @@
           <input type="text" id="search-input" placeholder="찾을 내용 입력..." autocomplete="off" autocorrect="off" spellcheck="false">
           <button class="search-nav" id="search-go">찾기</button>
           <span class="search-count" id="search-count"></span>
-          <button class="search-nav" id="search-prev">↑</button>
-          <button class="search-nav" id="search-next">↓</button>
           <button class="search-close" id="search-close">✕</button>
         </div>
+        <div id="search-results" class="search-results"></div>
       </div>
 
       <div id="text-display"></div>
@@ -379,6 +390,8 @@ function openDB() {
   });
 }
 
+let rawText = '';
+
 async function saveProgress() {
   if (!currentFileName || sentences.length === 0) return;
   try {
@@ -390,7 +403,7 @@ async function saveProgress() {
       total: sentences.length,
       lang: $('lang-select').value,
       rate: $('rate').value,
-      sentences: sentences,
+      rawText: rawText,
       savedAt: Date.now()
     }, DB_KEY);
   } catch(e) {}
@@ -422,7 +435,7 @@ try {
 } catch(e) {}
 
 loadProgress().then(saved => {
-  if (saved && saved.idx > 0 && saved.sentences && saved.sentences.length > 0) {
+  if (saved && saved.idx > 0 && saved.rawText) {
     $('resume-fname').textContent = saved.fileName;
     const pct = Math.round((saved.idx / saved.total) * 100);
     $('resume-sub').textContent = saved.idx + '번째 문장 · ' + pct + '% 진행됨';
@@ -438,20 +451,31 @@ $('btn-resume-dismiss').addEventListener('click', () => {
 let pendingResumeIdx = -1;
 
 $('btn-resume').addEventListener('click', async () => {
-  $('resume-banner').classList.remove('show');
+  $('btn-resume').textContent = '불러오는 중...';
+  $('btn-resume').disabled = true;
+  $('btn-resume-dismiss').disabled = true;
   const saved = await loadProgress();
-  if (!saved || !saved.sentences || !saved.sentences.length) {
+  if (!saved || !saved.rawText) {
+    $('resume-banner').classList.remove('show');
+    $('btn-resume').textContent = '▶ 이어듣기';
+    $('btn-resume').disabled = false;
+    $('btn-resume-dismiss').disabled = false;
     alert('저장된 진행 상태가 없습니다. 파일을 다시 선택해주세요.');
     return;
   }
-  sentences = saved.sentences;
+  rawText = saved.rawText;
+  sentences = splitSentences(rawText);
   currentFileName = saved.fileName || '';
-  idx = saved.idx || 0;
+  idx = Math.min(saved.idx || 0, sentences.length - 1);
   if (saved.lang) $('lang-select').value = saved.lang;
   if (saved.rate) { $('rate').value = saved.rate; $('rate-val').textContent = parseFloat(saved.rate).toFixed(1) + 'x'; }
   $('file-name').textContent = currentFileName;
   $('file-meta').textContent = sentences.length + ' 문장';
   renderText();
+  $('resume-banner').classList.remove('show');
+  $('btn-resume').textContent = '▶ 이어듣기';
+  $('btn-resume').disabled = false;
+  $('btn-resume-dismiss').disabled = false;
   $('upload-section').style.display = 'none';
   $('reader-section').style.display = 'block';
   updateStats();
@@ -466,6 +490,7 @@ function loadFile(file) {
   const reader = new FileReader();
   reader.onload = e => {
     const text = e.target.result;
+    rawText = text;
     sentences = splitSentences(text);
     currentFileName = file.name;
     if (pendingResumeIdx > 0 && pendingResumeIdx < sentences.length) {
@@ -599,24 +624,8 @@ $('search-close').addEventListener('click', () => {
 
 $('search-go').addEventListener('click', doSearch);
 
-$('search-prev').addEventListener('click', () => {
-  if (!searchResults.length) return;
-  searchIdx = (searchIdx - 1 + searchResults.length) % searchResults.length;
-  highlightSearch();
-});
-
-$('search-next').addEventListener('click', () => {
-  if (!searchResults.length) return;
-  searchIdx = (searchIdx + 1) % searchResults.length;
-  highlightSearch();
-});
-
 $('search-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    if (!searchResults.length) { doSearch(); return; }
-    searchIdx = (searchIdx + 1) % searchResults.length;
-    highlightSearch();
-  }
+  if (e.key === 'Enter') doSearch();
   if (e.key === 'Escape') { $('search-bar').style.display = 'none'; clearSearch(); }
 });
 
@@ -624,33 +633,41 @@ function doSearch() {
   const q = $('search-input').value.trim();
   clearSearchHighlights();
   searchResults = [];
+  $('search-results').innerHTML = '';
   if (!q) { $('search-count').textContent = ''; return; }
   sentences.forEach((s, i) => {
     if (s.toLowerCase().includes(q.toLowerCase())) searchResults.push(i);
   });
-  $('search-count').textContent = searchResults.length ? '1 / ' + searchResults.length : '없음';
-  searchIdx = 0;
+  $('search-count').textContent = searchResults.length ? searchResults.length + '건' : '없음';
   if (searchResults.length) {
     searchResults.forEach(i => {
       const el = $('s' + i);
       if (el) el.classList.add('highlight');
     });
-    highlightSearch();
+    renderSearchResults(q);
   }
 }
 
-function highlightSearch() {
-  searchResults.forEach(i => {
-    const el = $('s' + i);
-    if (el) { el.classList.remove('highlight-active'); el.classList.add('highlight'); }
+function renderSearchResults(query) {
+  const container = $('search-results');
+  const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+  container.innerHTML = searchResults.map(i => {
+    const text = escapeHtml(sentences[i]);
+    const highlighted = text.replace(re, '<mark>$1</mark>');
+    return '<div class="search-result-item" data-si="' + i + '"><span class="sr-num">' + (i + 1) + '</span>' + highlighted + '</div>';
+  }).join('');
+  container.querySelectorAll('.search-result-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const i = +el.dataset.si;
+      const wasPlaying = playing;
+      stopAll();
+      idx = i;
+      updateStats();
+      if (wasPlaying) playFrom(idx);
+      $('search-bar').style.display = 'none';
+      clearSearch();
+    });
   });
-  const activeEl = $('s' + searchResults[searchIdx]);
-  if (activeEl) {
-    activeEl.classList.remove('highlight');
-    activeEl.classList.add('highlight-active');
-    activeEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  }
-  $('search-count').textContent = (searchIdx + 1) + ' / ' + searchResults.length;
 }
 
 function clearSearchHighlights() {
@@ -664,20 +681,8 @@ function clearSearch() {
   searchResults = [];
   $('search-input').value = '';
   $('search-count').textContent = '';
+  $('search-results').innerHTML = '';
 }
-
-document.addEventListener('click', e => {
-  if (e.target.classList.contains('highlight') || e.target.classList.contains('highlight-active')) {
-    const i = +e.target.dataset.i;
-    const wasPlaying = playing;
-    stopAll();
-    idx = i;
-    updateStats();
-    if (wasPlaying) playFrom(idx);
-    $('search-bar').style.display = 'none';
-    clearSearch();
-  }
-});
 
 }
 </script>
