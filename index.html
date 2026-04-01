@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>소리내어 읽기</title>
+<title>텍듣</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
 
@@ -275,7 +275,7 @@
 <body>
 <div id="app">
   <header>
-    <h1>소리내어 읽기</h1>
+    <h1>텍듣</h1>
     <span>Text to Speech</span>
   </header>
 
@@ -553,7 +553,6 @@ function updateStats() {
   $('time-label').textContent = '약 ' + (m > 0 ? m + '분 ' : '') + s + '초 남음';
 }
 
-// Silent audio stream for Media Session (lock screen controls)
 let silentAudio = null;
 function initSilentAudio() {
   if (silentAudio) return;
@@ -573,8 +572,8 @@ function initSilentAudio() {
 function updateMediaSession() {
   if (!('mediaSession' in navigator)) return;
   navigator.mediaSession.metadata = new MediaMetadata({
-    title: sentences[idx] ? sentences[idx].substring(0, 60) : '소리내어 읽기',
-    artist: currentFileName || '소리내어 읽기',
+    title: currentFileName || '텍듣',
+    artist: '',
     album: (idx + 1) + ' / ' + sentences.length + ' 문장'
   });
   navigator.mediaSession.setActionHandler('play', () => { playFrom(idx); });
