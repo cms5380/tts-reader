@@ -553,6 +553,28 @@ function updateStats() {
   $('time-label').textContent = '약 ' + (m > 0 ? m + '분 ' : '') + s + '초 남음';
 }
 
+// Silent audio for Media Session (lock screen controls)
+const silentAudio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYoRwMHAAAAAAD/+1DEAAAIAANIAAAAQigA60gAAABEREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREf/7UMQ5g8AAAaQAAAAgAAA0gAAABERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERE=');
+silentAudio.loop = true;
+silentAudio.volume = 0.01;
+
+function updateMediaSession() {
+  if (!('mediaSession' in navigator)) return;
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: sentences[idx] ? sentences[idx].substring(0, 60) : '소리내어 읽기',
+    artist: currentFileName || '소리내어 읽기',
+    album: (idx + 1) + ' / ' + sentences.length + ' 문장'
+  });
+  navigator.mediaSession.setActionHandler('play', () => { playFrom(idx); });
+  navigator.mediaSession.setActionHandler('pause', () => { stopAll(); });
+  navigator.mediaSession.setActionHandler('previoustrack', () => {
+    const wp = playing; stopAll(); idx = Math.max(0, idx - 1); saveProgress(); updateStats(); if (wp) playFrom(idx);
+  });
+  navigator.mediaSession.setActionHandler('nexttrack', () => {
+    const wp = playing; stopAll(); idx = Math.min(sentences.length - 1, idx + 1); saveProgress(); updateStats(); if (wp) playFrom(idx);
+  });
+}
+
 const QUEUE_AHEAD = 5;
 let queuedUpTo = -1;
 
@@ -567,7 +589,7 @@ function enqueueNext() {
   utt.pitch = parseFloat($('pitch').value);
   utt.volume = parseFloat($('vol').value);
   const si = next;
-  utt.onstart = () => { idx = si; updateStats(); saveProgress(); };
+  utt.onstart = () => { idx = si; updateStats(); updateMediaSession(); saveProgress(); };
   utt.onend = () => {
     if (!playing) return;
     if (si + 1 >= sentences.length) { stopAll(); clearProgress(); return; }
@@ -585,6 +607,8 @@ function playFrom(i) {
   playing = true;
   $('btn-play').textContent = '⏸';
   updateStats();
+  updateMediaSession();
+  silentAudio.play().catch(() => {});
   saveProgress();
   for (let j = 0; j < QUEUE_AHEAD && (i + j) < sentences.length; j++) {
     enqueueNext();
@@ -595,6 +619,7 @@ function stopAll() {
   synth.cancel();
   playing = false;
   $('btn-play').textContent = '▶';
+  silentAudio.pause();
   saveProgress();
 }
 
