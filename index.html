@@ -366,51 +366,69 @@ const $ = id => document.getElementById(id);
 const dropZone = $('drop-zone');
 const fileInput = $('file-input');
 
-const STORE_KEY = 'tts_progress';
+const DB_NAME = 'tts_reader';
+const DB_STORE = 'progress';
+const DB_KEY = 'current';
 
-function saveProgress() {
-  if (!currentFileName || sentences.length === 0) return;
-  const data = {
-    fileName: currentFileName,
-    idx: idx,
-    total: sentences.length,
-    lang: $('lang-select').value,
-    rate: $('rate').value,
-    sentences: sentences,
-    savedAt: Date.now()
-  };
-  try {
-    const json = JSON.stringify(data);
-    localStorage.setItem(STORE_KEY, json);
-  } catch(e) {
-    try {
-      data.sentences = null;
-      localStorage.setItem(STORE_KEY, JSON.stringify(data));
-    } catch(e2) {}
-  }
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => { req.result.createObjectStore(DB_STORE); };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
 }
 
-function loadProgress() {
+async function saveProgress() {
+  if (!currentFileName || sentences.length === 0) return;
   try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
+    const db = await openDB();
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).put({
+      fileName: currentFileName,
+      idx: idx,
+      total: sentences.length,
+      lang: $('lang-select').value,
+      rate: $('rate').value,
+      sentences: sentences,
+      savedAt: Date.now()
+    }, DB_KEY);
+  } catch(e) {}
+}
+
+async function loadProgress() {
+  try {
+    const db = await openDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(DB_STORE, 'readonly');
+      const req = tx.objectStore(DB_STORE).get(DB_KEY);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    });
   } catch(e) { return null; }
 }
 
-function clearProgress() {
-  try { localStorage.removeItem(STORE_KEY); } catch(e) {}
+async function clearProgress() {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).delete(DB_KEY);
+  } catch(e) {}
 }
 
-const saved = loadProgress();
-if (saved && saved.idx > 0 && saved.sentences && saved.sentences.length > 0) {
-  $('resume-fname').textContent = saved.fileName;
-  const pct = Math.round((saved.idx / saved.total) * 100);
-  $('resume-sub').textContent = saved.idx + '번째 문장 · ' + pct + '% 진행됨';
-  $('resume-banner').classList.add('show');
-} else if (saved && saved.idx > 0) {
-  clearProgress();
-}
+try {
+  const old = localStorage.getItem('tts_progress');
+  if (old) { localStorage.removeItem('tts_progress'); }
+} catch(e) {}
+
+loadProgress().then(saved => {
+  if (saved && saved.idx > 0 && saved.sentences && saved.sentences.length > 0) {
+    $('resume-fname').textContent = saved.fileName;
+    const pct = Math.round((saved.idx / saved.total) * 100);
+    $('resume-sub').textContent = saved.idx + '번째 문장 · ' + pct + '% 진행됨';
+    $('resume-banner').classList.add('show');
+  }
+});
 
 $('btn-resume-dismiss').addEventListener('click', () => {
   $('resume-banner').classList.remove('show');
@@ -419,29 +437,24 @@ $('btn-resume-dismiss').addEventListener('click', () => {
 
 let pendingResumeIdx = -1;
 
-$('btn-resume').addEventListener('click', () => {
+$('btn-resume').addEventListener('click', async () => {
   $('resume-banner').classList.remove('show');
-  const saved = loadProgress();
-  if (!saved) { alert('저장된 진행 상태가 없습니다.'); return; }
-  if (saved.sentences && Array.isArray(saved.sentences) && saved.sentences.length > 0) {
-    sentences = saved.sentences;
-    currentFileName = saved.fileName || '';
-    idx = saved.idx || 0;
-    if (saved.lang) $('lang-select').value = saved.lang;
-    if (saved.rate) { $('rate').value = saved.rate; $('rate-val').textContent = parseFloat(saved.rate).toFixed(1) + 'x'; }
-    $('file-name').textContent = currentFileName;
-    $('file-meta').textContent = sentences.length + ' 문장';
-    renderText();
-    $('upload-section').style.display = 'none';
-    $('reader-section').style.display = 'block';
-    updateStats();
-  } else {
-    pendingResumeIdx = saved.idx || 0;
-    if (saved.lang) $('lang-select').value = saved.lang;
-    if (saved.rate) { $('rate').value = saved.rate; $('rate-val').textContent = parseFloat(saved.rate).toFixed(1) + 'x'; }
-    alert('같은 파일(' + (saved.fileName || '') + ')을 선택해주세요.');
-    fileInput.click();
+  const saved = await loadProgress();
+  if (!saved || !saved.sentences || !saved.sentences.length) {
+    alert('저장된 진행 상태가 없습니다. 파일을 다시 선택해주세요.');
+    return;
   }
+  sentences = saved.sentences;
+  currentFileName = saved.fileName || '';
+  idx = saved.idx || 0;
+  if (saved.lang) $('lang-select').value = saved.lang;
+  if (saved.rate) { $('rate').value = saved.rate; $('rate-val').textContent = parseFloat(saved.rate).toFixed(1) + 'x'; }
+  $('file-name').textContent = currentFileName;
+  $('file-meta').textContent = sentences.length + ' 문장';
+  renderText();
+  $('upload-section').style.display = 'none';
+  $('reader-section').style.display = 'block';
+  updateStats();
 });
 
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('hover'); });
