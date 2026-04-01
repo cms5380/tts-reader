@@ -113,7 +113,7 @@
   .btn { border: 0.5px solid var(--border); background: var(--surface2); color: var(--text); font-family: 'Noto Sans KR', sans-serif; border-radius: var(--radius-sm); cursor: pointer; transition: opacity 0.15s, transform 0.1s, background 0.15s; font-size: 13px; padding: 8px 14px; white-space: nowrap; }
   .btn:active { transform: scale(0.95); opacity: 0.8; }
 
-  .btn-play { width: 56px; height: 56px; border-radius: 50%; font-size: 22px; background: var(--accent); color: #0e0e10; border: none; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .btn-play { width: 56px; height: 56px; border-radius: 50%; font-size: 22px; background: var(--accent); color: #0e0e10; border: none; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: 'Noto Sans KR', sans-serif; }
   .btn-play:active { transform: scale(0.93); }
 
   .sliders { display: flex; flex-direction: column; gap: 10px; }
@@ -330,10 +330,10 @@ async function renderLibrary() {
     return '<div class="lib-item" data-id="' + f.id + '">' +
       '<div class="lib-info">' +
         '<div class="lib-name">' + escapeHtml(f.fileName) + '</div>' +
-        '<div class="lib-meta">' + f.total + ' 문장 · ' + pct + '% 진행</div>' +
+        '<div class="lib-meta">' + f.total + ' \ubb38\uc7a5 \u00b7 ' + pct + '% \uc9c4\ud589</div>' +
         '<div class="lib-progress"><div class="lib-progress-fill" style="width:' + pct + '%"></div></div>' +
       '</div>' +
-      '<button class="lib-delete" data-id="' + f.id + '">✕</button>' +
+      '<button class="lib-delete" data-id="' + f.id + '">\u2715</button>' +
     '</div>';
   }).join('');
   list.querySelectorAll('.lib-item').forEach(el => {
@@ -353,7 +353,7 @@ async function renderLibrary() {
 
 async function openFromLibrary(id) {
   const saved = await loadFile(id);
-  if (!saved || !saved.rawText) { alert('파일 데이터를 찾을 수 없습니다.'); return; }
+  if (!saved || !saved.rawText) { alert('\ud30c\uc77c \ub370\uc774\ud130\ub97c \ucc3e\uc744 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.'); return; }
   rawText = saved.rawText;
   sentences = splitSentences(rawText);
   currentFileName = saved.fileName || '';
@@ -362,7 +362,7 @@ async function openFromLibrary(id) {
   if (saved.lang) $('lang-select').value = saved.lang;
   if (saved.rate) { $('rate').value = saved.rate; $('rate-val').textContent = parseFloat(saved.rate).toFixed(1) + 'x'; }
   $('file-name').textContent = currentFileName;
-  $('file-meta').textContent = sentences.length + ' 문장';
+  $('file-meta').textContent = sentences.length + ' \ubb38\uc7a5';
   renderText();
   $('upload-section').style.display = 'none';
   $('reader-section').style.display = 'block';
@@ -384,7 +384,7 @@ function handleFiles(files) {
 }
 
 function loadFileToLibrary(file, isLast) {
-  $('drop-zone').innerHTML = '<div class="drop-title">불러오는 중...</div><div class="drop-sub">' + file.name + '</div>';
+  $('drop-zone').innerHTML = '<div class="drop-title">\ubd88\ub7ec\uc624\ub294 \uc911...</div><div class="drop-sub">' + file.name + '</div>';
   const reader = new FileReader();
   reader.onload = async e => {
     const text = e.target.result;
@@ -406,12 +406,12 @@ function loadFileToLibrary(file, isLast) {
       currentFileId = id;
       idx = 0;
       $('file-name').textContent = file.name;
-      $('file-meta').textContent = sentences.length + ' 문장 · ' + Math.round(text.length / 1000) + 'KB';
+      $('file-meta').textContent = sentences.length + ' \ubb38\uc7a5 \u00b7 ' + Math.round(text.length / 1000) + 'KB';
       renderText();
       $('upload-section').style.display = 'none';
       $('reader-section').style.display = 'block';
       updateStats();
-      $('drop-zone').innerHTML = '<span class="drop-icon">📄</span><div class="drop-title">파일을 선택하세요</div><div class="drop-sub">.txt 파일을 탭하여 불러오기</div>';
+      $('drop-zone').innerHTML = '<span class="drop-icon">\ud83d\udcc4</span><div class="drop-title">\ud30c\uc77c\uc744 \uc120\ud0dd\ud558\uc138\uc694</div><div class="drop-sub">.txt \ud30c\uc77c\uc744 \ud0ed\ud558\uc5ec \ubd88\ub7ec\uc624\uae30</div>';
     }
   };
   reader.readAsText(file, 'UTF-8');
@@ -419,7 +419,7 @@ function loadFileToLibrary(file, isLast) {
 
 function splitSentences(text) {
   const cleaned = text.replace(/\r\n/g, '\n').trim();
-  const parts = cleaned.split(/(?<=[.!?。！？])\s+|\n+/);
+  const parts = cleaned.split(/(?<=[.!?\u3002\uff01\uff1f])\s+|\n+/);
   return parts.map(s => s.trim()).filter(s => s.length > 1);
 }
 
@@ -450,12 +450,12 @@ function updateStats() {
   if (cur) cur.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   const pct = sentences.length > 1 ? (idx / (sentences.length - 1)) * 100 : 0;
   $('progress-fill').style.width = Math.round(pct) + '%';
-  $('pos-label').textContent = (idx + 1) + ' / ' + sentences.length + ' 문장';
+  $('pos-label').textContent = (idx + 1) + ' / ' + sentences.length + ' \ubb38\uc7a5';
   const remaining = sentences.length - idx;
   const rate = parseFloat($('rate').value);
   const secs = Math.round((remaining * 12) / (rate * 2.5));
   const m = Math.floor(secs / 60), s = secs % 60;
-  $('time-label').textContent = '약 ' + (m > 0 ? m + '분 ' : '') + s + '초 남음';
+  $('time-label').textContent = '\uc57d ' + (m > 0 ? m + '\ubd84 ' : '') + s + '\ucd08 \ub0a8\uc74c';
 }
 
 let silentAudio = null;
@@ -477,9 +477,9 @@ function initSilentAudio() {
 function updateMediaSession() {
   if (!('mediaSession' in navigator)) return;
   navigator.mediaSession.metadata = new MediaMetadata({
-    title: currentFileName || '텍듣',
+    title: currentFileName || '\ud14d\ub4e3',
     artist: '',
-    album: (idx + 1) + ' / ' + sentences.length + ' 문장'
+    album: (idx + 1) + ' / ' + sentences.length + ' \ubb38\uc7a5'
   });
   navigator.mediaSession.setActionHandler('play', () => { playFrom(idx); });
   navigator.mediaSession.setActionHandler('pause', () => { stopAll(); });
@@ -511,7 +511,7 @@ function enqueueNext() {
     if (si + 1 >= sentences.length) { stopAll(); return; }
     enqueueNext();
   };
-  utt.onerror = () => { playing = false; $('btn-play').textContent = '▶'; };
+  utt.onerror = () => { playing = false; $('btn-play').textContent = '\u25b6'; };
   synth.speak(utt);
 }
 
@@ -521,7 +521,7 @@ function playFrom(i) {
   idx = i;
   queuedUpTo = i - 1;
   playing = true;
-  $('btn-play').textContent = '⏸';
+  $('btn-play').textContent = '\u23f8\ufe0e';
   updateStats();
   updateMediaSession();
   initSilentAudio();
@@ -535,7 +535,7 @@ function playFrom(i) {
 function stopAll() {
   synth.cancel();
   playing = false;
-  $('btn-play').textContent = '▶';
+  $('btn-play').textContent = '\u25b6';
   if (silentAudio) silentAudio.pause();
   saveProgress();
 }
@@ -582,7 +582,7 @@ function doSearch() {
   sentences.forEach((s, i) => {
     if (s.toLowerCase().includes(q.toLowerCase())) searchResults.push(i);
   });
-  $('search-count').textContent = searchResults.length ? searchResults.length + '건' : '없음';
+  $('search-count').textContent = searchResults.length ? searchResults.length + '\uac74' : '\uc5c6\uc74c';
   if (searchResults.length) {
     searchResults.forEach(i => {
       const el = $('s' + i);
